@@ -9,11 +9,10 @@ Defines tables for:
 All models include automatic timestamps via `created_at` and `updated_at`.
 """
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from database import Base  # Import the declarative base
-
+from database import Base
 
 class User(Base):
     """
@@ -47,17 +46,19 @@ class UploadedDocument(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
-    # For PDFs we store the file path instead of raw content
     file_path = Column(String, nullable=False)
-    file_type = Column(String, nullable=True)  # e.g., 'pdf', 'txt'
-    filename = Column(String, nullable=False)  # original filename
+    file_type = Column(String, nullable=True)
+    filename = Column(String, nullable=False)
     mimetype = Column(String, nullable=False)
     filesize = Column(Integer, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
+    # Indexes
+    Index('idx_doc_owner', owner_id)
+    Index('idx_doc_user', user_id)
+
     owner = relationship("User", back_populates="documents")
 
 
@@ -74,7 +75,9 @@ class ChatHistory(Base):
     ai_response = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relationships
+    # Indexes
+    Index('idx_chat_user', user_id)
+
     user = relationship("User", back_populates="chats")
 
 
@@ -88,13 +91,15 @@ class Quiz(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
     description = Column(Text, nullable=True)
-    questions = Column(Text, nullable=False)  # JSON string of questions
+    questions = Column(Text, nullable=False)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_completed = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
+    # Indexes
+    Index('idx_quiz_owner', owner_id)
+
     owner = relationship("User", back_populates="quizzes")
 
 
@@ -108,11 +113,13 @@ class Note(Base):
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String, index=True, nullable=False)
     content = Column(Text, nullable=False)
-    tags = Column(String, nullable=True)  # Comma-separated tags
+    tags = Column(String, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     is_public = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    # Relationships
+    # Indexes
+    Index('idx_note_owner', owner_id)
+
     owner = relationship("User", back_populates="notes")

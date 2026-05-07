@@ -1,10 +1,12 @@
 """
-PDF upload endpoint for Vansh AI.
-Accepts a PDF file, saves it locally, extracts all text using PyPDF2,
-stores metadata in the database, and returns the extracted text.
+PDF upload for Vansh AI
+Created by: Vansh Gulati
+Accepts PDF uploads, saves locally, extracts text using PyPDF2,
+stores metadata in DB, and adds text to ChromaDB vector store.
 """
 
 import os
+from werkzeug.utils import secure_filename
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from PyPDF2 import PdfReader
@@ -12,73 +14,67 @@ from PyPDF2 import PdfReader
 from auth import get_current_user
 from models import UploadedDocument, User
 from database import SessionLocal
+from clients import add_to_vectorstore
 
-# ---------------------------------------------------------------------------
-# Router setup
-# ---------------------------------------------------------------------------
+# Router
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])
 
-# Folder where uploaded PDFs will be stored (configurable via env)
+# Upload folder
 UPLOAD_DIR = os.getenv("PDF_UPLOAD_DIR", "./uploads")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# ---------------------------------------------------------------------------
-# Database dependency
-# ---------------------------------------------------------------------------
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Allowed file extensions
+ALLOWED_EXTENSIONS = {'.pdf'}
 
-# ---------------------------------------------------------------------------
-# Upload endpoint
-# ---------------------------------------------------------------------------
+
 @router.post("/upload")
 async def upload_pdf(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """
-    Upload a PDF, extract text with PyPDF2, save file locally,
-    store metadata in DB, and return extracted text.
-    """
-    # 1. Validate file type
+    # 1. Validate file extension
+    original_name = secure_filename(file.filename)
+    ext = os.path.splitext(original_name)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF files are allowed",
+        )
+
+    # 2. Validate MIME type (additional check)
     if file.content_type != "application/pdf":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF files are accepted",
+            detail="Invalid file type",
         )
 
-    # 2. Read file contents (for size check and saving)
+    # 3. Read file contents
     contents = await file.read()
-    max_size = 5 * 1024 * 1024  # 5 MiB limit
+    max_size = 5 * 1024 * 1024  # 5 MiB
     if len(contents) > max_size:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="File too large (max 5 MiB)",
         )
 
-    # 3. Save the file locally with a safe name
-    safe_filename = f"{current_user.id}_{file.filename}"
+    # 4. Save file locally with safe name
+    safe_filename = f"{current_user.id}_{original_name}"
     file_path = os.path.join(UPLOAD_DIR, safe_filename)
     with open(file_path, "wb") as f:
         f.write(contents)
 
-    # 4. Extract text from PDF using PyPDF2
+    # 5. Extract text using PyPDF2
     try:
         reader = PdfReader(file_path)
-        # Combine text from all pages; if a page has no text, use empty string
         extracted_text = "\n".join(page.extract_text() or "" for page in reader.pages)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to extract text from PDF: {exc}",
+            detail=f"Failed to read PDF: {exc}",
         )
 
-    # 5. Store metadata in the database
+    # 6. Store metadata in DB
     doc = UploadedDocument(
         title=file.filename,
         file_path=file_path,
@@ -92,10 +88,12 @@ async def upload_pdf(
     db.commit()
     db.refresh(doc)
 
-    # 6. Return the extracted text (and some metadata)
+    # 7. Add to ChromaDB vector store
+    await add_to_vectorstore(current_user.id, doc.id, extracted_text, file.filename)
+
     return {
         "id": doc.id,
         "filename": file.filename,
         "extracted_text": extracted_text,
-        "pages": len(reader.pages) if "reader" in locals() else None,
+        "pages": len(reader.pages),
     }

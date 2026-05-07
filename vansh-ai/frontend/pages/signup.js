@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import axios from 'axios'
+import api from '../lib/api'
 import { useRouter } from 'next/router'
 
 export default function SignUp() {
@@ -16,16 +16,13 @@ export default function SignUp() {
     e.preventDefault()
     setError('')
     try {
-      const res = await axios.post('http://localhost:8000/api/auth/signup', form)
-      // Store JWT returned by signup (the same payload as login)
-      if (res.data && res.data.id) {
-        // After signup, we need to login to get a token – call login endpoint automatically
-        const loginRes = await axios.post('http://localhost:8000/api/auth/login', {
-          username: form.username,
-          password: form.password,
-        })
-        localStorage.setItem('authToken', loginRes.data.access_token)
-      }
+      await api.post('http://localhost:8000/api/auth/signup', form)
+      // Auto-login after signup
+      const loginRes = await api.post('http://localhost:8000/api/auth/login', {
+        username: form.username,
+        password: form.password,
+      })
+      localStorage.setItem('authToken', loginRes.data.access_token)
       router.push('/')
     } catch (err) {
       setError(err.response?.data?.detail || 'Signup failed')
@@ -33,32 +30,62 @@ export default function SignUp() {
   }
 
   return (
-    <div style={{ maxWidth: 400, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <h1>Sign Up</h1>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Username</label><br />
-          <input name="username" type="text" value={form.username} onChange={handleChange} required style={{ width: '100%', padding: '0.5rem' }} />
+    <div className="max-w-md mx-auto mt-12 p-6">
+      <h1 className="text-2xl font-bold mb-6">Sign Up</h1>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block mb-1 font-medium">Username</label>
+          <input
+            name="username"
+            type="text"
+            value={form.username}
+            onChange={handleChange}
+            required
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Email</label><br />
-          <input name="email" type="email" value={form.email} onChange={handleChange} required style={{ width: '100%', padding: '0.5rem' }} />
+        <div>
+          <label className="block mb-1 font-medium">Email</label>
+          <input
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            required
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Full Name (optional)</label><br />
-          <input name="full_name" type="text" value={form.full_name} onChange={handleChange} style={{ width: '100%', padding: '0.5rem' }} />
+        <div>
+          <label className="block mb-1 font-medium">Full Name (optional)</label>
+          <input
+            name="full_name"
+            type="text"
+            value={form.full_name}
+            onChange={handleChange}
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label>Password</label><br />
-          <input name="password" type="password" value={form.password} onChange={handleChange} required style={{ width: '100%', padding: '0.5rem' }} />
+        <div>
+          <label className="block mb-1 font-medium">Password</label>
+          <input
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            required
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-        <button type="submit" style={{ padding: '0.5rem 1rem', background: '#0070f3', color: 'white', border: 'none', borderRadius: 4 }}>
+        <button
+          type="submit"
+          className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
           Sign Up
         </button>
       </form>
-      <p>
-        Already have an account? <a href="/login">Log in</a>
+      <p className="mt-4 text-sm">
+        Already have an account? <a href="/login" className="text-blue-600 hover:underline">Log in</a>
       </p>
     </div>
   )

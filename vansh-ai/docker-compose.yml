@@ -11,10 +11,17 @@ services:
       - ./backend/.env
     volumes:
       - ./backend:/app
+      - ./uploads:/app/uploads
+      - ./chroma_db:/app/chroma_db
     environment:
       - DATABASE_URL=sqlite:///./vansh_ai.db
       - CHROMA_DB_PATH=./chroma_db
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
     build:

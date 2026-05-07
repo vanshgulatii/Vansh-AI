@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from '../lib/api'
 import { useRouter } from 'next/router'
 
 export default function Home() {
@@ -9,7 +9,6 @@ export default function Home() {
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState('')
 
-  // On mount, read token from localStorage
   useEffect(() => {
     const t = localStorage.getItem('authToken')
     setToken(t || '')
@@ -27,7 +26,7 @@ export default function Home() {
     setLoading(true)
     try {
       const headers = token ? { Authorization: `Bearer ${token}` } : {}
-      const res = await axios.post('http://localhost:8000/api/query', { query }, { headers })
+      const res = await api.post('http://localhost:8000/api/query', { query }, { headers })
       setAnswer(res.data.answer)
     } catch (err) {
       console.error(err)
@@ -38,37 +37,47 @@ export default function Home() {
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Vansh AI</h1>
+    <div className="max-w-2xl mx-auto p-4 font-sans">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Vansh AI</h1>
         {token ? (
-          <button onClick={handleLogout} style={{ padding: '0.5rem 1rem', background: '#d32f2f', color: 'white', border: 'none', borderRadius: 4 }}>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          >
             Logout
           </button>
         ) : (
           <span>
-            <a href="/login" style={{ marginRight: 8 }}>Login</a>
+            <a href="/login" className="mr-2">Login</a>
             <a href="/signup">Sign up</a>
           </span>
         )}
       </div>
-      <p>Ask me anything!</p>
-      <form onSubmit={handleSubmit}>
+
+      <p className="mt-4 text-gray-600">Ask me anything!</p>
+
+      <form onSubmit={handleSubmit} className="mt-6">
         <textarea
           rows={4}
-          style={{ width: '100%', padding: '0.5rem' }}
+          className="w-full p-3 border border-gray-300 rounded resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Type your question here..."
         />
-        <button type="submit" disabled={loading} style={{ marginTop: '1rem', padding: '0.5rem 1rem' }}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+        >
           {loading ? 'Thinking...' : 'Ask'}
         </button>
       </form>
+
       {answer && (
-        <div style={{ marginTop: '2rem', padding: '1rem', background: '#f5f5f5' }}>
-          <strong>Answer:</strong>
-          <p>{answer}</p>
+        <div className="mt-8 p-4 bg-gray-50 rounded border">
+          <strong className="block mb-2">Answer:</strong>
+          <p className="whitespace-pre-wrap">{answer}</p>
         </div>
       )}
     </div>
