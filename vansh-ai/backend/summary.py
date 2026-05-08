@@ -11,9 +11,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from auth import get_current_user, get_db
-from models import UploadedDocument, User
-from clients import get_collection
+from .auth import get_current_user, get_db
+from .models import UploadedDocument, User
+from .clients import get_collection
 
 
 router = APIRouter(prefix="/api/summary", tags=["summary"])

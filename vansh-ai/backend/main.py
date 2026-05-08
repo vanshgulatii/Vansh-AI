@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 
 # Routers
-from auth import router as auth_router
+from .auth import router as auth_router
 from upload_pdf import router as pdf_router
 from chat import router as chat_router
 from summary import router as summary_router

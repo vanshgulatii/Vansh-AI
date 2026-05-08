@@ -12,7 +12,7 @@ All models include automatic timestamps via `created_at` and `updated_at`.
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
-from database import Base
+from .database import Base
 
 class User(Base):
     """
@@ -56,8 +56,10 @@ class UploadedDocument(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Indexes
-    Index('idx_doc_owner', owner_id)
-    Index('idx_doc_user', user_id)
+    __table_args__ = (
+        Index('idx_doc_owner', 'owner_id'),
+        Index('idx_doc_user', 'owner_id'),
+    )
 
     owner = relationship("User", back_populates="documents")
 

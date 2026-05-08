@@ -14,8 +14,8 @@ from pydantic import BaseModel, EmailStr
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
-from database import SessionLocal
-from models import User
+from .database import SessionLocal
+from .models import User
 
 # Config from environment
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "vansh-gulati-secret-2026")

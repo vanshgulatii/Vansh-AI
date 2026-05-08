@@ -11,10 +11,10 @@ from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from PyPDF2 import PdfReader
 
-from auth import get_current_user
-from models import UploadedDocument, User
-from database import SessionLocal
-from clients import add_to_vectorstore
+from .auth import get_current_user
+from .models import UploadedDocument, User
+from .database import SessionLocal
+from .clients import add_to_vectorstore
 
 # Router
 router = APIRouter(prefix="/api/pdf", tags=["pdf"])

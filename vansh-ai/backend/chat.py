@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from auth import get_current_user, get_db
+from .auth import get_current_user, get_db
 from models import ChatHistory, UploadedDocument, User
 from clients import get_collection, embed_text
 
